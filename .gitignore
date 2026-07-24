@@ -167,3 +167,30 @@ cython_debug/
 
 *.oudb
 benchmark/
+
+# Virtual environments
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Test and analysis cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.json
+
+# Generated reports
+coverage-reports/
+mutation-reports/
+test-reports/
+htmlcov/
+
+# Raw Pynguin output
+tests/student_404131050/generated/raw/
+
+# IDE
+.vscode/
+.idea/
