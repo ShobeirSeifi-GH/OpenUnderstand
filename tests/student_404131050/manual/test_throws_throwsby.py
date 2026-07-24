@@ -705,3 +705,17 @@ def test_nested_class_uses_immediate_parent_as_scope_parent(
     assert reference["scopelongname"] == "sample.Outer.Inner.execute"
     assert reference["scope_parent"] == "Inner"
     assert reference["potential_refent"] == "sample.Outer.Inner.IOException"
+
+
+@pytest.mark.unit
+def test_findmethodreturntype_traverses_multiple_parent_levels() -> None:
+    listener = sut.Throws_TrowsBy()
+    method_context = MethodDeclarationContext()
+
+    intermediate_context = _ChildContext(method_context)
+    nested_context = _ChildContext(intermediate_context)
+
+    return_type, method_content = listener.findmethodreturntype(nested_context)
+
+    assert return_type == "void"
+    assert method_content == "void execute() throws IOException {}"
