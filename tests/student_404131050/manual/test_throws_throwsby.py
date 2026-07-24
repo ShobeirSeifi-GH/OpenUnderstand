@@ -228,3 +228,180 @@ def test_findmethodacess_returns_empty_list_without_class_body_parent() -> None:
     result = listener.findmethodacess(child_context)
 
     assert result == []
+
+
+class _ThrowsConstructorContext:
+    """Fake constructor context for isolated listener tests."""
+
+    start = _FakeToken()
+    parentCtx = None
+
+    def __init__(self, has_throws: bool = True) -> None:
+        self._has_throws = has_throws
+
+    def THROWS(self) -> bool:
+        return self._has_throws
+
+    def qualifiedNameList(self) -> _QualifiedNameList:
+        return _QualifiedNameList()
+
+
+@pytest.mark.unit
+def test_constructor_with_throws_records_reference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    listener = sut.Throws_TrowsBy()
+    context = _ThrowsConstructorContext()
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodacess",
+        lambda _: ["public"],
+    )
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodreturntype",
+        lambda _: ("", "Service() throws IOException {}"),
+    )
+
+    monkeypatch.setattr(
+        sut.class_properties.ClassPropertiesListener,
+        "findParents",
+        lambda _: ["sample", "Service", "Service"],
+    )
+
+    monkeypatch.setattr(
+        sut,
+        "ProjectModel",
+        SimpleNamespace(select=lambda: [SimpleNamespace(root="C:/temporary/project")]),
+    )
+
+    monkeypatch.setattr(
+        sut,
+        "throws_parent_finder",
+        lambda _root, _exception_name: None,
+    )
+
+    listener.enterConstructorDeclaration(context)
+
+    assert len(listener.implement) == 1
+
+    reference = listener.implement[0]
+
+    assert reference["scopename"] == "Service"
+    assert reference["scopelongname"] == "sample.Service.Service"
+    assert reference["scope_parent"] == "Service"
+    assert reference["scopemodifiers"] == ["public"]
+    assert reference["scopereturntype"] == ""
+    assert reference["scopecontent"] == "Service() throws IOException {}"
+    assert reference["refent"] == "IOException"
+    assert reference["potential_refent"] == "sample.Service.IOException"
+    assert reference["line"] == "7"
+    assert reference["col"] == "4"
+
+
+@pytest.mark.unit
+def test_constructor_without_throws_records_nothing() -> None:
+    listener = sut.Throws_TrowsBy()
+    context = _ThrowsConstructorContext(has_throws=False)
+
+    listener.enterConstructorDeclaration(context)
+
+    assert listener.implement == []
+
+
+class _ThrowsInterfaceMethodContext:
+    """Fake interface-method context for isolated listener tests."""
+
+    start = _FakeToken()
+    parentCtx = None
+
+    def __init__(self, has_throws: bool = True) -> None:
+        self._has_throws = has_throws
+
+    def THROWS(self) -> bool:
+        return self._has_throws
+
+    def qualifiedNameList(self) -> _QualifiedNameList:
+        return _QualifiedNameList()
+
+
+@pytest.mark.unit
+def test_interface_method_with_throws_records_reference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    listener = sut.Throws_TrowsBy()
+    context = _ThrowsInterfaceMethodContext()
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodacess",
+        lambda _: ["public", "abstract"],
+    )
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodreturntype",
+        lambda _: (
+            "void",
+            "void save() throws IOException;",
+        ),
+    )
+
+    monkeypatch.setattr(
+        sut.class_properties.ClassPropertiesListener,
+        "findParents",
+        lambda _: [
+            "sample",
+            "Repository",
+            "save",
+        ],
+    )
+
+    monkeypatch.setattr(
+        sut,
+        "ProjectModel",
+        SimpleNamespace(
+            select=lambda: [
+                SimpleNamespace(
+                    root="C:/temporary/project",
+                )
+            ]
+        ),
+    )
+
+    monkeypatch.setattr(
+        sut,
+        "throws_parent_finder",
+        lambda _root, _exception_name: None,
+    )
+
+    listener.enterInterfaceMethodDeclaration(context)
+
+    assert len(listener.implement) == 1
+
+    reference = listener.implement[0]
+
+    assert reference["scopename"] == "save"
+    assert reference["scopelongname"] == "sample.Repository.save"
+    assert reference["scope_parent"] == "Repository"
+    assert reference["scopemodifiers"] == ["public", "abstract"]
+    assert reference["scopereturntype"] == "void"
+    assert reference["scopecontent"] == "void save() throws IOException;"
+    assert reference["refent"] == "IOException"
+    assert reference["potential_refent"] == "sample.Repository.IOException"
+    assert reference["line"] == "7"
+    assert reference["col"] == "4"
+
+
+@pytest.mark.unit
+def test_interface_method_without_throws_records_nothing() -> None:
+    listener = sut.Throws_TrowsBy()
+    context = _ThrowsInterfaceMethodContext(
+        has_throws=False,
+    )
+
+    listener.enterInterfaceMethodDeclaration(context)
+
+    assert listener.implement == []
