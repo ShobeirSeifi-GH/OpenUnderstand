@@ -405,3 +405,95 @@ def test_interface_method_without_throws_records_nothing() -> None:
     listener.enterInterfaceMethodDeclaration(context)
 
     assert listener.implement == []
+
+
+@pytest.mark.unit
+def test_parent_finder_returns_package_for_existing_exception(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_walk_result: list[tuple[str, list[str], list[str]]] = [
+        (
+            "C:/project/src/main/java/sample",
+            [],
+            ["Service.java"],
+        ),
+        (
+            "C:/project/src/main/java/org/example/errors",
+            [],
+            ["IOException.java"],
+        ),
+    ]
+
+    monkeypatch.setattr(
+        sut.os,
+        "walk",
+        lambda _root: iter(fake_walk_result),
+    )
+
+    result = sut.throws_parent_finder(
+        "C:/project",
+        "IOException",
+    )
+
+    assert result == "org.example.errors"
+
+
+@pytest.mark.unit
+def test_resolved_exception_uses_qualified_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    listener = sut.Throws_TrowsBy()
+    context = _ThrowsMethodContext()
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodacess",
+        lambda _: ["public"],
+    )
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodreturntype",
+        lambda _: (
+            "void",
+            "void execute() throws IOException {}",
+        ),
+    )
+
+    monkeypatch.setattr(
+        sut.class_properties.ClassPropertiesListener,
+        "findParents",
+        lambda _: [
+            "sample",
+            "Service",
+            "execute",
+        ],
+    )
+
+    monkeypatch.setattr(
+        sut,
+        "ProjectModel",
+        SimpleNamespace(
+            select=lambda: [
+                SimpleNamespace(
+                    root="C:/temporary/project",
+                )
+            ]
+        ),
+    )
+
+    monkeypatch.setattr(
+        sut,
+        "throws_parent_finder",
+        lambda _root, _exception_name: "org.example.errors",
+    )
+
+    listener.enterMethodDeclaration(context)
+
+    assert len(listener.implement) == 1
+
+    reference = listener.implement[0]
+
+    assert reference["refent"] == "org.example.errors.IOException"
+    assert reference["scopename"] == "execute"
+    assert reference["scopelongname"] == "sample.Service.execute"
