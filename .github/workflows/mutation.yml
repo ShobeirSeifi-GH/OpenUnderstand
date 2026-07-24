@@ -48,6 +48,18 @@ jobs:
         run: |
           mutmut run
 
+      - name: Inspect one surviving mutant
+        if: ${{ always() }}
+        run: |
+          mkdir -p mutation-reports
+
+          mutmut apply "openunderstand.analysis_passes.Throws_ThrowsBy.xǁThrows_TrowsByǁfindmethodreturntype__mutmut_13"
+
+          git diff -- openunderstand/analysis_passes/Throws_ThrowsBy.py \
+            > mutation-reports/mutant-diff.txt
+
+          git restore -- openunderstand/analysis_passes/Throws_ThrowsBy.py
+
       - name: Save mutation results
         if: ${{ always() }}
         run: |
