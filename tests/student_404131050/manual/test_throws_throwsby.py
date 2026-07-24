@@ -132,9 +132,7 @@ def test_enter_method_declaration_records_reference_metadata(
     monkeypatch.setattr(
         sut,
         "ProjectModel",
-        SimpleNamespace(
-            select=lambda: [SimpleNamespace(root="C:/temporary/project")]
-        ),
+        SimpleNamespace(select=lambda: [SimpleNamespace(root="C:/temporary/project")]),
     )
     monkeypatch.setattr(
         sut,
@@ -157,3 +155,76 @@ def test_enter_method_declaration_records_reference_metadata(
     assert reference["potential_refent"] == "sample.Service.IOException"
     assert reference["line"] == "7"
     assert reference["col"] == "4"
+
+
+class _FakeModifier:
+    """Fake Java modifier node."""
+
+    def __init__(self, text: str | None) -> None:
+        self._text = text
+
+    def classOrInterfaceModifier(self) -> _TextNode | None:
+        if self._text is None:
+            return None
+
+        return _TextNode(self._text)
+
+
+class ClassBodyDeclarationContext:
+    """Fake context whose class name matches the production code."""
+
+    parentCtx = None
+
+    def __init__(self, modifiers: list[_FakeModifier]) -> None:
+        self._modifiers = modifiers
+
+    def modifier(self) -> list[_FakeModifier]:
+        return self._modifiers
+
+
+@pytest.mark.unit
+def test_findmethodacess_returns_method_modifiers() -> None:
+    listener = sut.Throws_TrowsBy()
+
+    class_body_context = ClassBodyDeclarationContext(
+        [
+            _FakeModifier("public"),
+            _FakeModifier("static"),
+            _FakeModifier("final"),
+        ]
+    )
+
+    child_context = _ChildContext(class_body_context)
+
+    result = listener.findmethodacess(child_context)
+
+    assert result == ["public", "static", "final"]
+
+
+@pytest.mark.unit
+def test_findmethodacess_ignores_non_class_modifiers() -> None:
+    listener = sut.Throws_TrowsBy()
+
+    class_body_context = ClassBodyDeclarationContext(
+        [
+            _FakeModifier("public"),
+            _FakeModifier(None),
+        ]
+    )
+
+    child_context = _ChildContext(class_body_context)
+
+    result = listener.findmethodacess(child_context)
+
+    assert result == ["public"]
+
+
+@pytest.mark.unit
+def test_findmethodacess_returns_empty_list_without_class_body_parent() -> None:
+    listener = sut.Throws_TrowsBy()
+
+    child_context = _ChildContext(_RootContext())
+
+    result = listener.findmethodacess(child_context)
+
+    assert result == []
