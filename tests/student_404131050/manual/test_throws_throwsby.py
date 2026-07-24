@@ -581,3 +581,127 @@ def test_method_with_multiple_exceptions_records_every_reference(
         "IOException",
         "SQLException",
     ]
+
+
+@pytest.mark.unit
+def test_short_parent_chain_sets_scope_parent_to_none(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    listener = sut.Throws_TrowsBy()
+    context = _ThrowsMethodContext()
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodacess",
+        lambda _: [],
+    )
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodreturntype",
+        lambda _: (
+            "void",
+            "void execute() throws IOException {}",
+        ),
+    )
+
+    monkeypatch.setattr(
+        sut.class_properties.ClassPropertiesListener,
+        "findParents",
+        lambda _: [
+            "Service",
+            "execute",
+        ],
+    )
+
+    monkeypatch.setattr(
+        sut,
+        "ProjectModel",
+        SimpleNamespace(
+            select=lambda: [
+                SimpleNamespace(
+                    root="C:/temporary/project",
+                )
+            ]
+        ),
+    )
+
+    monkeypatch.setattr(
+        sut,
+        "throws_parent_finder",
+        lambda _root, _exception_name: None,
+    )
+
+    listener.enterMethodDeclaration(context)
+
+    assert len(listener.implement) == 1
+
+    reference = listener.implement[0]
+
+    assert reference["scopename"] == "execute"
+    assert reference["scopelongname"] == "Service.execute"
+    assert reference["scope_parent"] is None
+    assert reference["potential_refent"] == "Service.IOException"
+
+
+@pytest.mark.unit
+def test_nested_class_uses_immediate_parent_as_scope_parent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    listener = sut.Throws_TrowsBy()
+    context = _ThrowsMethodContext()
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodacess",
+        lambda _: ["public"],
+    )
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodreturntype",
+        lambda _: (
+            "void",
+            "void execute() throws IOException {}",
+        ),
+    )
+
+    monkeypatch.setattr(
+        sut.class_properties.ClassPropertiesListener,
+        "findParents",
+        lambda _: [
+            "sample",
+            "Outer",
+            "Inner",
+            "execute",
+        ],
+    )
+
+    monkeypatch.setattr(
+        sut,
+        "ProjectModel",
+        SimpleNamespace(
+            select=lambda: [
+                SimpleNamespace(
+                    root="C:/temporary/project",
+                )
+            ]
+        ),
+    )
+
+    monkeypatch.setattr(
+        sut,
+        "throws_parent_finder",
+        lambda _root, _exception_name: None,
+    )
+
+    listener.enterMethodDeclaration(context)
+
+    assert len(listener.implement) == 1
+
+    reference = listener.implement[0]
+
+    assert reference["scopename"] == "execute"
+    assert reference["scopelongname"] == "sample.Outer.Inner.execute"
+    assert reference["scope_parent"] == "Inner"
+    assert reference["potential_refent"] == "sample.Outer.Inner.IOException"
