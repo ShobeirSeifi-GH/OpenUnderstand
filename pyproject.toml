@@ -19,6 +19,9 @@ markers = [
     "oracle: differential tests against SciTools Understand",
     "slow: tests excluded from the fast CI job",
 ]
+norecursedirs = [
+    "tests/student_404131050/generated/raw",
+]
 
 [tool.coverage.run]
 branch = true
