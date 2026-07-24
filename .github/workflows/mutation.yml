@@ -1,0 +1,74 @@
+name: OpenUnderstand Mutation Testing
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/testing-404131050
+    paths:
+      - "openunderstand/analysis_passes/Throws_ThrowsBy.py"
+      - "tests/student_404131050/**"
+      - "pyproject.toml"
+      - ".github/workflows/mutation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  mutation:
+    name: Mutmut Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      PYTHONHASHSEED: "0"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11.9"
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.lock
+          python -m pip check
+
+      - name: Run baseline tests
+        run: |
+          python -m pytest tests/student_404131050 -q -rxX
+
+      - name: Run mutation testing
+        run: |
+          mutmut run
+
+      - name: Save mutation results
+        if: ${{ always() }}
+        run: |
+          mkdir -p mutation-reports
+          mutmut results | tee mutation-reports/mutmut-results.txt
+
+      - name: Add results to job summary
+        if: ${{ always() }}
+        run: |
+          echo '## Mutation Testing Results' >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          cat mutation-reports/mutmut-results.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload mutation reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: mutation-reports
+          path: |
+            mutation-reports/
+            mutants/
+          if-no-files-found: warn
+          retention-days: 14

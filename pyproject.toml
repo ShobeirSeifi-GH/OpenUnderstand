@@ -94,3 +94,23 @@ module = [
 ]
 follow_imports = "skip"
 ignore_errors = true
+
+[tool.mutmut]
+source_paths = [
+    "openunderstand",
+]
+only_mutate = [
+    "openunderstand/analysis_passes/Throws_ThrowsBy.py",
+]
+pytest_add_cli_args_test_selection = [
+    "tests/student_404131050",
+]
+pytest_add_cli_args = [
+    "-q",
+    "-rxX",
+    "-p",
+    "no:cov",
+]
+mutate_only_covered_lines = true
+max_stack_depth = 8
+
