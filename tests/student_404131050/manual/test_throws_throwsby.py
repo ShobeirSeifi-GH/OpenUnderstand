@@ -497,3 +497,87 @@ def test_resolved_exception_uses_qualified_name(
     assert reference["refent"] == "org.example.errors.IOException"
     assert reference["scopename"] == "execute"
     assert reference["scopelongname"] == "sample.Service.execute"
+
+
+class _MultipleQualifiedNameList:
+    """Fake qualified-name list containing multiple exceptions."""
+
+    def getText(self) -> str:
+        return "IOException,SQLException"
+
+
+class _MultipleThrowsMethodContext:
+    """Fake method declaration containing multiple thrown exceptions."""
+
+    start = _FakeToken()
+    parentCtx = None
+
+    def THROWS(self) -> bool:
+        return True
+
+    def qualifiedNameList(self) -> _MultipleQualifiedNameList:
+        return _MultipleQualifiedNameList()
+
+
+@pytest.mark.unit
+@pytest.mark.xfail(
+    strict=True,
+    reason="Known defect: only the final exception in a throws list is recorded.",
+)
+def test_method_with_multiple_exceptions_records_every_reference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    listener = sut.Throws_TrowsBy()
+    context = _MultipleThrowsMethodContext()
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodacess",
+        lambda _: ["public"],
+    )
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodreturntype",
+        lambda _: (
+            "void",
+            "void execute() throws IOException, SQLException {}",
+        ),
+    )
+
+    monkeypatch.setattr(
+        sut.class_properties.ClassPropertiesListener,
+        "findParents",
+        lambda _: [
+            "sample",
+            "Service",
+            "execute",
+        ],
+    )
+
+    monkeypatch.setattr(
+        sut,
+        "ProjectModel",
+        SimpleNamespace(
+            select=lambda: [
+                SimpleNamespace(
+                    root="C:/temporary/project",
+                )
+            ]
+        ),
+    )
+
+    monkeypatch.setattr(
+        sut,
+        "throws_parent_finder",
+        lambda _root, _exception_name: None,
+    )
+
+    listener.enterMethodDeclaration(context)
+
+    recorded_exceptions = [reference["refent"] for reference in listener.implement]
+
+    assert recorded_exceptions == [
+        "IOException",
+        "SQLException",
+    ]
