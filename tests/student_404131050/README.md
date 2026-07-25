@@ -28,14 +28,15 @@ The tests are stored under:
 tests/student_404131050/
 ├── fixtures/
 │   └── java/
-│       └── malformed/
-│           └── BrokenThrows.java
+│       ├── malformed/
+│       │   └── BrokenThrows.java
+│       └── valid/
 ├── generated/
 ├── manual/
 │   ├── test_environment.py
 │   ├── test_throws_integration.py
-│   ├── test_throws_throwsby.py
-│   └── test_throws_properties.py
+│   ├── test_throws_properties.py
+│   └── test_throws_throwsby.py
 └── mutation-summary.md
 ```
 
@@ -72,13 +73,31 @@ exception back to the method.
 The repeated-pass test verifies that multiple persistence passes request the
 same reference identities and do not change the semantic relationship.
 
+## Property-based testing
+
+Hypothesis was used as an optional advanced testing technique.
+
+A property-based test generates 50 valid Java identifiers and verifies that
+each exception name is preserved correctly in the generated Throws reference
+metadata.
+
+The test validates:
+
+- Exception entity names
+- Potential qualified entity names
+- Scope names and long names
+- Multi-digit source line and column values
+
+The Hypothesis test completed successfully without discovering additional
+failures.
+
 Final pytest result
 
-Collected: 31
-Passed: 30
+Collected: 32
+Passed: 31
 Expected failures: 1
 Unexpected failures: 0
-Execution time: 0.71 seconds
+Execution time: 4.53 seconds
 
 The expected failure documents a known defect involving declarations that
 contain multiple exceptions.
