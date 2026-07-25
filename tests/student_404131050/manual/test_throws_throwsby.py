@@ -151,6 +151,7 @@ def test_enter_method_declaration_records_reference_metadata(
     assert reference["scope_parent"] == "Service"
     assert reference["scopemodifiers"] == ["public"]
     assert reference["scopereturntype"] == "void"
+    assert reference["scopecontent"] == "void execute() throws IOException {}"
     assert reference["refent"] == "IOException"
     assert reference["potential_refent"] == "sample.Service.IOException"
     assert reference["line"] == "7"
