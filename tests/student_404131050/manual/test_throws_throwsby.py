@@ -738,3 +738,64 @@ def test_findmethodacess_traverses_multiple_parent_levels() -> None:
     result = listener.findmethodacess(nested_context)
 
     assert result == ["public", "static"]
+
+
+@pytest.mark.unit
+def test_enter_method_declaration_passes_context_to_modifier_lookup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    listener = sut.Throws_TrowsBy()
+    context = _ThrowsMethodContext()
+
+    received_contexts: list[object] = []
+
+    def fake_findmethodacess(received_context: object) -> list[str]:
+        received_contexts.append(received_context)
+        return ["public"]
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodacess",
+        fake_findmethodacess,
+    )
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodreturntype",
+        lambda _: (
+            "void",
+            "void execute() throws IOException {}",
+        ),
+    )
+
+    monkeypatch.setattr(
+        sut.class_properties.ClassPropertiesListener,
+        "findParents",
+        lambda _: [
+            "sample",
+            "Service",
+            "execute",
+        ],
+    )
+
+    monkeypatch.setattr(
+        sut,
+        "ProjectModel",
+        SimpleNamespace(
+            select=lambda: [
+                SimpleNamespace(
+                    root="C:/temporary/project",
+                )
+            ]
+        ),
+    )
+
+    monkeypatch.setattr(
+        sut,
+        "throws_parent_finder",
+        lambda _root, _exception_name: None,
+    )
+
+    listener.enterMethodDeclaration(context)
+
+    assert received_contexts == [context]
