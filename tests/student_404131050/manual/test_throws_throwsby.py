@@ -44,6 +44,12 @@ class _FakeToken:
         # from the fourth comma-separated element.
         return "[@1,0:0='x',<1>,7:4]"
 
+class _WideColumnToken:
+    """Fake token with a multi-digit column number."""
+
+    def __str__(self) -> str:
+        return "[@1,0:0='x',<1>,7:42]"
+
 
 class _QualifiedNameList:
     def getText(self) -> str:
@@ -315,7 +321,7 @@ def test_constructor_without_throws_records_nothing() -> None:
 class _ThrowsInterfaceMethodContext:
     """Fake interface-method context for isolated listener tests."""
 
-    start = _FakeToken()
+    start = _WideColumnToken()
     parentCtx = None
 
     def __init__(self, has_throws: bool = True) -> None:
@@ -393,7 +399,7 @@ def test_interface_method_with_throws_records_reference(
     assert reference["refent"] == "IOException"
     assert reference["potential_refent"] == "sample.Repository.IOException"
     assert reference["line"] == "7"
-    assert reference["col"] == "4"
+    assert reference["col"] == "42"
 
 
 @pytest.mark.unit
