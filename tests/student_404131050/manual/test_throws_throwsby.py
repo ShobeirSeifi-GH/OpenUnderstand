@@ -719,3 +719,22 @@ def test_findmethodreturntype_traverses_multiple_parent_levels() -> None:
 
     assert return_type == "void"
     assert method_content == "void execute() throws IOException {}"
+
+
+@pytest.mark.unit
+def test_findmethodacess_traverses_multiple_parent_levels() -> None:
+    listener = sut.Throws_TrowsBy()
+
+    class_body_context = ClassBodyDeclarationContext(
+        [
+            _FakeModifier("public"),
+            _FakeModifier("static"),
+        ]
+    )
+
+    intermediate_context = _ChildContext(class_body_context)
+    nested_context = _ChildContext(intermediate_context)
+
+    result = listener.findmethodacess(nested_context)
+
+    assert result == ["public", "static"]
