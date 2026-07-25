@@ -530,7 +530,11 @@ class _MultipleThrowsMethodContext:
 @pytest.mark.unit
 @pytest.mark.xfail(
     strict=True,
-    reason="Known defect: only the final exception in a throws list is recorded.",
+    reason=(
+        "Known defect: only the final exception is recorded "
+        "for multi-exception declarations; "
+        "see GitHub issue #1"
+    ),
 )
 def test_method_with_multiple_exceptions_records_every_reference(
     monkeypatch: pytest.MonkeyPatch,
