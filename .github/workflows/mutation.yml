@@ -48,34 +48,45 @@ jobs:
         run: |
           mutmut run
 
-      - name: Inspect representative surviving mutants
+      - name: Export all surviving mutant diffs
         if: ${{ always() }}
         shell: bash
         run: |
+          set -uo pipefail
+
+          target="openunderstand/analysis_passes/Throws_ThrowsBy.py"
+
           mkdir -p mutation-reports/diffs
 
-          mutants=(
-            'openunderstand.analysis_passes.Throws_ThrowsBy.xǁThrows_TrowsByǁfindmethodacess__mutmut_13'
-            'openunderstand.analysis_passes.Throws_ThrowsBy.xǁThrows_TrowsByǁenterMethodDeclaration__mutmut_2'
-            'openunderstand.analysis_passes.Throws_ThrowsBy.xǁThrows_TrowsByǁenterMethodDeclaration__mutmut_45'
-            'openunderstand.analysis_passes.Throws_ThrowsBy.xǁThrows_TrowsByǁenterConstructorDeclaration__mutmut_13'
-            'openunderstand.analysis_passes.Throws_ThrowsBy.xǁThrows_TrowsByǁenterInterfaceMethodDeclaration__mutmut_47'
-          )
+          mutmut results > mutation-reports/mutmut-results.txt
+
+          sed -nE \
+            's/^[[:space:]]*(.+): survived$/\1/p' \
+            mutation-reports/mutmut-results.txt \
+            > mutation-reports/survived-mutants.txt
 
           index=1
 
-          for mutant in "${mutants[@]}"; do
-            echo "$mutant" > "mutation-reports/diffs/mutant-${index}-name.txt"
+          while IFS= read -r mutant; do
+            number=$(printf "%03d" "$index")
 
-            mutmut apply "$mutant"
+            git restore -- "$target"
 
-            git diff -- openunderstand/analysis_passes/Throws_ThrowsBy.py \
-              > "mutation-reports/diffs/mutant-${index}.diff"
+            printf '%s\n' "$mutant" \
+              > "mutation-reports/diffs/${number}-name.txt"
 
-            git restore -- openunderstand/analysis_passes/Throws_ThrowsBy.py
+            if mutmut apply "$mutant"; then
+              git diff -- "$target" \
+                > "mutation-reports/diffs/${number}.diff"
+            else
+              printf 'Failed to apply mutant: %s\n' "$mutant" \
+                > "mutation-reports/diffs/${number}.error.txt"
+            fi
+
+            git restore -- "$target"
 
             index=$((index + 1))
-          done
+          done < mutation-reports/survived-mutants.txt
 
       - name: Save mutation results
         if: ${{ always() }}
