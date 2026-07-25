@@ -44,6 +44,7 @@ class _FakeToken:
         # from the fourth comma-separated element.
         return "[@1,0:0='x',<1>,7:4]"
 
+
 class _WideColumnToken:
     """Fake token with a multi-digit column number."""
 
@@ -806,3 +807,117 @@ def test_enter_method_declaration_passes_context_to_modifier_lookup(
     listener.enterMethodDeclaration(context)
 
     assert received_contexts == [context]
+
+
+class _ContractThrowsContext:
+    """Context used to verify callback interactions and generated metadata."""
+
+    start = _WideColumnToken()
+    parentCtx = None
+
+    def THROWS(self) -> bool:
+        return True
+
+    def qualifiedNameList(self) -> _TextNode:
+        return _TextNode("FirstException,SecondException")
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "entrypoint",
+    [
+        "enterMethodDeclaration",
+        "enterConstructorDeclaration",
+        "enterInterfaceMethodDeclaration",
+    ],
+)
+def test_declaration_callbacks_preserve_context_and_reference_inputs(
+    entrypoint: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    listener = sut.Throws_TrowsBy()
+    context = _ContractThrowsContext()
+
+    modifier_contexts: list[object] = []
+    return_type_contexts: list[object] = []
+    parent_contexts: list[object] = []
+    parent_finder_calls: list[tuple[object, object]] = []
+
+    def fake_findmethodacess(received_context: object) -> list[str]:
+        modifier_contexts.append(received_context)
+        return ["public"]
+
+    def fake_findmethodreturntype(
+        received_context: object,
+    ) -> tuple[str, str]:
+        return_type_contexts.append(received_context)
+        return (
+            "void",
+            "void member() throws FirstException, SecondException {}",
+        )
+
+    def fake_find_parents(received_context: object) -> list[str]:
+        parent_contexts.append(received_context)
+        return ["Container", "member"]
+
+    def fake_throws_parent_finder(
+        root: object,
+        exception_name: object,
+    ) -> None:
+        parent_finder_calls.append((root, exception_name))
+        return None
+
+    monkeypatch.setattr(
+        listener,
+        "findmethodacess",
+        fake_findmethodacess,
+    )
+    monkeypatch.setattr(
+        listener,
+        "findmethodreturntype",
+        fake_findmethodreturntype,
+    )
+    monkeypatch.setattr(
+        sut.class_properties.ClassPropertiesListener,
+        "findParents",
+        fake_find_parents,
+    )
+    monkeypatch.setattr(
+        sut,
+        "ProjectModel",
+        SimpleNamespace(
+            select=lambda: [
+                SimpleNamespace(
+                    root="C:/expected/project",
+                )
+            ]
+        ),
+    )
+    monkeypatch.setattr(
+        sut,
+        "throws_parent_finder",
+        fake_throws_parent_finder,
+    )
+
+    getattr(listener, entrypoint)(context)
+
+    assert modifier_contexts == [context]
+    assert return_type_contexts == [context]
+    assert parent_contexts == [context]
+
+    assert (
+        "C:/expected/project",
+        "SecondException",
+    ) in parent_finder_calls
+
+    reference = listener.implement[-1]
+
+    assert reference["scopename"] == "member"
+    assert reference["scopelongname"] == "Container.member"
+    assert reference["scope_parent"] is None
+    assert reference["scopemodifiers"] == ["public"]
+    assert reference["scopereturntype"] == "void"
+    assert reference["refent"] == "SecondException"
+    assert reference["potential_refent"] == "Container.SecondException"
+    assert reference["line"] == "7"
+    assert reference["col"] == "42"
