@@ -194,3 +194,4 @@ tests/student_404131050/generated/raw/
 # IDE
 .vscode/
 .idea/
+pynguin-report/
