@@ -269,7 +269,7 @@ def test_constructor_with_throws_records_reference(
     monkeypatch.setattr(
         sut.class_properties.ClassPropertiesListener,
         "findParents",
-        lambda _: ["sample", "Service", "Service"],
+        lambda _: ["sample", "Container", "Service"],
     )
 
     monkeypatch.setattr(
@@ -291,13 +291,13 @@ def test_constructor_with_throws_records_reference(
     reference = listener.implement[0]
 
     assert reference["scopename"] == "Service"
-    assert reference["scopelongname"] == "sample.Service.Service"
-    assert reference["scope_parent"] == "Service"
+    assert reference["scopelongname"] == "sample.Container.Service"
+    assert reference["scope_parent"] == "Container"
     assert reference["scopemodifiers"] == ["public"]
     assert reference["scopereturntype"] == ""
     assert reference["scopecontent"] == "Service() throws IOException {}"
     assert reference["refent"] == "IOException"
-    assert reference["potential_refent"] == "sample.Service.IOException"
+    assert reference["potential_refent"] == "sample.Container.IOException"
     assert reference["line"] == "7"
     assert reference["col"] == "4"
 
