@@ -48,17 +48,34 @@ jobs:
         run: |
           mutmut run
 
-      - name: Inspect one surviving mutant
+      - name: Inspect representative surviving mutants
         if: ${{ always() }}
+        shell: bash
         run: |
-          mkdir -p mutation-reports
+          mkdir -p mutation-reports/diffs
 
-          mutmut apply "openunderstand.analysis_passes.Throws_ThrowsBy.xǁThrows_TrowsByǁfindmethodreturntype__mutmut_13"
+          mutants=(
+            'openunderstand.analysis_passes.Throws_ThrowsBy.xǁThrows_TrowsByǁfindmethodacess__mutmut_13'
+            'openunderstand.analysis_passes.Throws_ThrowsBy.xǁThrows_TrowsByǁenterMethodDeclaration__mutmut_2'
+            'openunderstand.analysis_passes.Throws_ThrowsBy.xǁThrows_TrowsByǁenterMethodDeclaration__mutmut_45'
+            'openunderstand.analysis_passes.Throws_ThrowsBy.xǁThrows_TrowsByǁenterConstructorDeclaration__mutmut_13'
+            'openunderstand.analysis_passes.Throws_ThrowsBy.xǁThrows_TrowsByǁenterInterfaceMethodDeclaration__mutmut_47'
+          )
 
-          git diff -- openunderstand/analysis_passes/Throws_ThrowsBy.py \
-            > mutation-reports/mutant-diff.txt
+          index=1
 
-          git restore -- openunderstand/analysis_passes/Throws_ThrowsBy.py
+          for mutant in "${mutants[@]}"; do
+            echo "$mutant" > "mutation-reports/diffs/mutant-${index}-name.txt"
+
+            mutmut apply "$mutant"
+
+            git diff -- openunderstand/analysis_passes/Throws_ThrowsBy.py \
+              > "mutation-reports/diffs/mutant-${index}.diff"
+
+            git restore -- openunderstand/analysis_passes/Throws_ThrowsBy.py
+
+            index=$((index + 1))
+          done
 
       - name: Save mutation results
         if: ${{ always() }}
