@@ -26,9 +26,18 @@ The tests are stored under:
 
 ```text
 tests/student_404131050/
-├── manual/
+├── fixtures/
+│   └── java/
+│       └── malformed/
+│           └── BrokenThrows.java
 ├── generated/
+├── manual/
+│   ├── test_environment.py
+│   ├── test_throws_integration.py
+│   ├── test_throws_throwsby.py
+│   └── test_throws_properties.py
 └── mutation-summary.md
+```
 
 Manual tests verify normal behavior, edge cases, parser-context traversal,
 reference metadata, unresolved exceptions, nested scopes, constructors,
@@ -37,10 +46,36 @@ interface methods, and known defects.
 Generated tests were produced using Pynguin, reviewed manually, and curated
 before integration into the main test suite.
 
+## Manual unit testing
+
+The manual test suite covers:
+
+- Normal method, constructor, and interface-method declarations
+- Declarations without a `throws` clause
+- Resolved and unresolved exception entities
+- Parent-child and nested-scope relationships
+- Multi-level parser-context traversal
+- Reference metadata and source locations
+- Malformed Java input and parser error recovery
+- Direct `Throws` and inverse `ThrowsBy` reference creation
+- Stable reference identity across repeated analysis passes
+- Multiple-exception declarations as a documented expected failure
+
+The malformed-input test parses an intentionally incomplete Java source file.
+It verifies that ANTLR reports a syntax error while the analysis listener
+continues without crashing.
+
+The inverse-reference test verifies that a direct `Throws` relationship from
+a method to an exception is accompanied by a `ThrowsBy` relationship from the
+exception back to the method.
+
+The repeated-pass test verifies that multiple persistence passes request the
+same reference identities and do not change the semantic relationship.
+
 Final pytest result
 
-Collected: 28
-Passed: 27
+Collected: 31
+Passed: 30
 Expected failures: 1
 Unexpected failures: 0
 Execution time: 0.71 seconds
@@ -224,11 +259,12 @@ python -m mypy tests\student_404131050 scripts
 
 Final status
 
-Pytest:          PASSED
-Known defect:    XFAIL, documented in GitHub issue #1
-Line coverage:   97.56%
-Branch coverage: 83.33%
-Mutation score:  100%
-Ruff:            PASSED
-mypy:            PASSED
-Oracle:          Pending
+Manual test requirements: COMPLETE
+Pytest:                  PASSED
+Known defect:            XFAIL, documented in GitHub issue #1
+Line coverage:           97.56%
+Branch coverage:         83.33%
+Mutation score:          100%
+Ruff:                    PASSED
+mypy:                    PASSED
+Oracle validation:       Pending license
