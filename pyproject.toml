@@ -112,6 +112,6 @@ pytest_add_cli_args = [
     "-p",
     "no:cov",
 ]
-mutate_only_covered_lines = true
+mutate_only_covered_lines = false
 max_stack_depth = 8
 
