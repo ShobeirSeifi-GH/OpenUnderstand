@@ -1,0 +1,78 @@
+name: Performance Regression
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - feature/testing-404131050
+    paths:
+      - "scripts/benchmark_throws.py"
+      - "openunderstand/analysis_passes/Throws_ThrowsBy.py"
+      - "requirements-dev.lock"
+      - ".github/workflows/performance.yml"
+
+  pull_request:
+    branches:
+      - feature/testing-404131050
+    paths:
+      - "scripts/benchmark_throws.py"
+      - "openunderstand/analysis_passes/Throws_ThrowsBy.py"
+      - "requirements-dev.lock"
+      - ".github/workflows/performance.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: Throws performance benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11.9"
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.lock
+          python -m pip check
+
+      - name: Run performance regression benchmark
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/openunderstand
+        run: |
+          python -m scripts.benchmark_throws \
+            --small-batch 1000 \
+            --large-batch 2000 \
+            --repeats 5 \
+            --max-seconds 3.0 \
+            --max-growth 3.0 \
+            --output performance-reports/throws-performance.json
+
+      - name: Add benchmark to job summary
+        if: ${{ always() }}
+        run: |
+          echo '## Throws Performance Benchmark' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat performance-reports/throws-performance.json \
+            >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload performance report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: performance-report
+          path: performance-reports/
+          if-no-files-found: error
+          retention-days: 14
