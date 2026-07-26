@@ -2,7 +2,17 @@ name: OpenUnderstand Mutation Testing
 
 on:
   workflow_dispatch:
+
   push:
+    branches:
+      - feature/testing-404131050
+    paths:
+      - "openunderstand/analysis_passes/Throws_ThrowsBy.py"
+      - "tests/student_404131050/**"
+      - "pyproject.toml"
+      - ".github/workflows/mutation.yml"
+
+  pull_request:
     branches:
       - feature/testing-404131050
     paths:

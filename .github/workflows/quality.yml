@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - feature/testing-404131050
+
   pull_request:
     branches:
-      - master
+      - feature/testing-404131050
+
   workflow_dispatch:
 
 permissions:

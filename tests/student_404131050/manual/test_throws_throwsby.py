@@ -29,8 +29,33 @@ class MethodDeclarationContext:
         return "void execute() throws IOException {}"
 
 
+class ConstructorDeclarationContext:
+    """Fake constructor declaration matching the generated parser class."""
+
+    parentCtx = None
+
+    def getText(self) -> str:
+        return "Service() throws IOException {}"
+
+
+class InterfaceMethodDeclarationContext:
+    """Fake interface-method declaration matching the parser class."""
+
+    parentCtx = None
+
+    def typeTypeOrVoid(self) -> _TextNode:
+        return _TextNode("void")
+
+    def getText(self) -> str:
+        return "void save() throws IOException;"
+
+
 class _RootContext:
     parentCtx = None
+
+
+class _ContextWithoutParent:
+    """Context that does not expose a parentCtx attribute."""
 
 
 class _ChildContext:
@@ -84,6 +109,44 @@ def test_findmethodreturntype_finds_method_parent() -> None:
 
     assert return_type == "void"
     assert method_content == "void execute() throws IOException {}"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    (
+        "declaration_context",
+        "expected_return_type",
+        "expected_content",
+    ),
+    [
+        (
+            MethodDeclarationContext(),
+            "void",
+            "void execute() throws IOException {}",
+        ),
+        (
+            ConstructorDeclarationContext(),
+            "",
+            "Service() throws IOException {}",
+        ),
+        (
+            InterfaceMethodDeclarationContext(),
+            "void",
+            "void save() throws IOException;",
+        ),
+    ],
+)
+def test_findmethodreturntype_accepts_declaration_context_directly(
+    declaration_context: object,
+    expected_return_type: str,
+    expected_content: str,
+) -> None:
+    listener = sut.Throws_TrowsBy()
+
+    return_type, content = listener.findmethodreturntype(declaration_context)
+
+    assert return_type == expected_return_type
+    assert content == expected_content
 
 
 @pytest.mark.unit
@@ -528,15 +591,16 @@ class _MultipleThrowsMethodContext:
 
 
 @pytest.mark.unit
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Known defect: only the final exception is recorded "
-        "for multi-exception declarations; "
-        "see GitHub issue #1"
-    ),
+@pytest.mark.parametrize(
+    "entrypoint",
+    [
+        "enterMethodDeclaration",
+        "enterConstructorDeclaration",
+        "enterInterfaceMethodDeclaration",
+    ],
 )
-def test_method_with_multiple_exceptions_records_every_reference(
+def test_declaration_with_multiple_exceptions_records_every_reference(
+    entrypoint: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     listener = sut.Throws_TrowsBy()
@@ -585,7 +649,7 @@ def test_method_with_multiple_exceptions_records_every_reference(
         lambda _root, _exception_name: None,
     )
 
-    listener.enterMethodDeclaration(context)
+    getattr(listener, entrypoint)(context)
 
     recorded_exceptions = [reference["refent"] for reference in listener.implement]
 
@@ -925,3 +989,13 @@ def test_declaration_callbacks_preserve_context_and_reference_inputs(
     assert reference["potential_refent"] == "Container.SecondException"
     assert reference["line"] == "7"
     assert reference["col"] == "42"
+
+
+@pytest.mark.unit
+def test_findmethodreturntype_handles_context_without_parent_attribute() -> None:
+    listener = sut.Throws_TrowsBy()
+
+    return_type, content = listener.findmethodreturntype(_ContextWithoutParent())
+
+    assert return_type == ""
+    assert content == ""
