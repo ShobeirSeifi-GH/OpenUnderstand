@@ -305,6 +305,22 @@ Branch coverage: 96.43%
 Coverage quality gate: PASSED
 ```
 
+## Semantic reference graph validation
+
+An additional semantic graph test validates the consistency of the
+`Throws` and `ThrowsBy` relationships.
+
+For multiple exception entities, the test verifies that:
+
+- Every direct `Throws` edge has one inverse `ThrowsBy` edge
+- Source and destination entities are correctly reversed
+- File, line, and column metadata remain consistent
+- Duplicate graph edges are not produced
+- Self-referencing edges are not produced
+
+This test validates graph-level invariants rather than only checking
+individual reference dictionaries.
+
 
 Oracle validation
 

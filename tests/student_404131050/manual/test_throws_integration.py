@@ -241,3 +241,127 @@ def test_repeated_analysis_pass_uses_stable_reference_identity(
 
     assert second_pass == first_pass
     assert {call["_kind"] for call in reference_calls} == {236, 237}
+
+
+@pytest.mark.integration
+def test_throws_reference_graph_is_bidirectional_and_consistent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Every Throws edge must have exactly one consistent inverse edge."""
+
+    project = project_module.Project()
+
+    file_entity = SimpleNamespace(_id=10, name="Example.java")
+    method_entity = SimpleNamespace(_id=20, name="execute")
+
+    exception_entities = {
+        "java.io.IOException": SimpleNamespace(
+            _id=30,
+            name="IOException",
+        ),
+        "java.sql.SQLException": SimpleNamespace(
+            _id=31,
+            name="SQLException",
+        ),
+    }
+
+    first_reference = _reference_metadata()
+
+    second_reference = {
+        **_reference_metadata(),
+        "refent": "java.sql.SQLException",
+        "potential_refent": "sample.Service.java.sql.SQLException",
+        "line": "8",
+        "col": "12",
+    }
+
+    reference_calls: list[dict[str, Any]] = []
+
+    def fake_entity_get_or_create(
+        **_kwargs: Any,
+    ) -> tuple[SimpleNamespace, bool]:
+        return method_entity, False
+
+    def fake_reference_get_or_create(
+        **kwargs: Any,
+    ) -> tuple[SimpleNamespace, bool]:
+        reference_calls.append(dict(kwargs))
+        return SimpleNamespace(), False
+
+    def fake_get_throw_entity(
+        longname: str,
+        _file_address: str,
+        _file_entity: object,
+    ) -> SimpleNamespace:
+        return exception_entities[longname]
+
+    monkeypatch.setattr(
+        project_module,
+        "EntityModel",
+        SimpleNamespace(
+            get_or_create=fake_entity_get_or_create,
+        ),
+    )
+    monkeypatch.setattr(
+        project_module,
+        "ReferenceModel",
+        SimpleNamespace(
+            get_or_create=fake_reference_get_or_create,
+        ),
+    )
+    monkeypatch.setattr(
+        project,
+        "findKindWithKeywords",
+        lambda _kind, _modifiers: 60,
+    )
+    monkeypatch.setattr(
+        project,
+        "getThrowEntity",
+        fake_get_throw_entity,
+    )
+
+    project.addThrows_TrowsByRefs(
+        [
+            first_reference,
+            second_reference,
+        ],
+        file_entity,
+        "Example.java",
+        236,
+        237,
+        True,
+    )
+
+    throws_calls = [call for call in reference_calls if call["_kind"] == 236]
+    throwsby_calls = [call for call in reference_calls if call["_kind"] == 237]
+
+    assert len(throws_calls) == 2
+    assert len(throwsby_calls) == 2
+
+    direct_edges = {
+        (
+            call["_scope"]._id,
+            call["_ent"]._id,
+            call["_file"]._id,
+            call["_line"],
+            call["_column"],
+        )
+        for call in throws_calls
+    }
+
+    inverse_edges = {
+        (
+            call["_ent"]._id,
+            call["_scope"]._id,
+            call["_file"]._id,
+            call["_line"],
+            call["_column"],
+        )
+        for call in throwsby_calls
+    }
+
+    assert direct_edges == inverse_edges
+    assert len(direct_edges) == len(throws_calls)
+
+    for source_id, target_id, *_location in direct_edges:
+        assert source_id != target_id
