@@ -528,15 +528,16 @@ class _MultipleThrowsMethodContext:
 
 
 @pytest.mark.unit
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Known defect: only the final exception is recorded "
-        "for multi-exception declarations; "
-        "see GitHub issue #1"
-    ),
+@pytest.mark.parametrize(
+    "entrypoint",
+    [
+        "enterMethodDeclaration",
+        "enterConstructorDeclaration",
+        "enterInterfaceMethodDeclaration",
+    ],
 )
-def test_method_with_multiple_exceptions_records_every_reference(
+def test_declaration_with_multiple_exceptions_records_every_reference(
+    entrypoint: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     listener = sut.Throws_TrowsBy()
@@ -585,7 +586,7 @@ def test_method_with_multiple_exceptions_records_every_reference(
         lambda _root, _exception_name: None,
     )
 
-    listener.enterMethodDeclaration(context)
+    getattr(listener, entrypoint)(context)
 
     recorded_exceptions = [reference["refent"] for reference in listener.implement]
 
