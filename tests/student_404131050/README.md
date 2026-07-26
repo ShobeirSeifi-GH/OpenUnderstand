@@ -165,6 +165,20 @@ Method, constructor, and interface callback contracts
 
 After strengthening the manual tests
 
+```markdown
+## Mutation testing progression
+
+Before the production-code refactor:
+
+```text
+Total mutants:     247
+Killed mutants:    247
+Survived mutants:    0
+Mutation score:   100.00%
+
+After fixing the multi-exception defect and refactoring the declaration
+callbacks
+
 Total mutants:     151
 Killed mutants:    151
 Survived mutants:    0
