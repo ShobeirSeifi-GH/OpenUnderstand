@@ -93,20 +93,31 @@ failures.
 
 Final pytest result
 
-Collected: 38
-Passed: 38
+Collected: 39
+Passed: 39
 Expected failures: 0
 Unexpected failures: 0
-Execution time: 1.97 seconds
+Execution time: 2.21 seconds
 
 The expected failure documents a known defect involving declarations that
 contain multiple exceptions.
 
 
-Coverage result
+## Final coverage result
 
-Line coverage:     100.00%
-Branch coverage:    96.43%
+```text
+Statements covered: 68 / 68
+Line coverage:      100.00%
+Branches:            28
+Partial branches:     1
+Branch coverage:     96.43%
+Combined coverage:   98.96%
+```
+
+The remaining partial branch is reported as `47 -> 50`. Both configured
+
+
+quality gates were satisfied:
 
 
 Configured quality gates:
@@ -299,7 +310,7 @@ Workflow:
 Result:
 Docker image build: PASSED
 Containerized tests: PASSED
-Pytest: 38 passed
+Pytest: 39 passed
 Line coverage: 100.00%
 Branch coverage: 96.43%
 Coverage quality gate: PASSED
