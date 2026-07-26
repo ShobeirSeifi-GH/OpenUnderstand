@@ -29,6 +29,27 @@ class MethodDeclarationContext:
         return "void execute() throws IOException {}"
 
 
+class ConstructorDeclarationContext:
+    """Fake constructor declaration matching the generated parser class."""
+
+    parentCtx = None
+
+    def getText(self) -> str:
+        return "Service() throws IOException {}"
+
+
+class InterfaceMethodDeclarationContext:
+    """Fake interface-method declaration matching the parser class."""
+
+    parentCtx = None
+
+    def typeTypeOrVoid(self) -> _TextNode:
+        return _TextNode("void")
+
+    def getText(self) -> str:
+        return "void save() throws IOException;"
+
+
 class _RootContext:
     parentCtx = None
 
@@ -84,6 +105,44 @@ def test_findmethodreturntype_finds_method_parent() -> None:
 
     assert return_type == "void"
     assert method_content == "void execute() throws IOException {}"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    (
+        "declaration_context",
+        "expected_return_type",
+        "expected_content",
+    ),
+    [
+        (
+            MethodDeclarationContext(),
+            "void",
+            "void execute() throws IOException {}",
+        ),
+        (
+            ConstructorDeclarationContext(),
+            "",
+            "Service() throws IOException {}",
+        ),
+        (
+            InterfaceMethodDeclarationContext(),
+            "void",
+            "void save() throws IOException;",
+        ),
+    ],
+)
+def test_findmethodreturntype_accepts_declaration_context_directly(
+    declaration_context: object,
+    expected_return_type: str,
+    expected_content: str,
+) -> None:
+    listener = sut.Throws_TrowsBy()
+
+    return_type, content = listener.findmethodreturntype(declaration_context)
+
+    assert return_type == expected_return_type
+    assert content == expected_content
 
 
 @pytest.mark.unit
