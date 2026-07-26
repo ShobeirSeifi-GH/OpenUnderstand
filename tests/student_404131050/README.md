@@ -370,13 +370,56 @@ avoid introducing timing-dependent and potentially flaky unit tests.
 The generated JSON report is uploaded by GitHub Actions as the
 `performance-report` artifact.
 
-Oracle validation
+## Oracle validation
 
-Comparison with SciTools Understand is currently pending because Understand
-and a valid license are not available in the local Windows environment.
+SciTools Understand was selected as the preferred commercial oracle.
+An educational license was requested, but access was still pending at the
+time of validation.
 
-No Oracle result has been inferred or fabricated. This validation must be
-completed after access to SciTools Understand becomes available.
+To avoid blocking the experiment, an independent fallback oracle was
+implemented using the Java Compiler Tree API provided by JDK 21.
+
+The fallback oracle parses the same Java fixture through `javac` and extracts
+declared exception relationships from the compiler AST. OpenUnderstand parses
+the fixture independently through its ANTLR-based analysis pass.
+
+The comparison covers:
+
+- Class constructors
+- Class methods
+- Interface methods
+- Multiple exceptions in one `throws` clause
+
+The following six direct relationships were compared:
+
+```text
+OracleThrows -> OracleThrows -> FirstException
+OracleThrows -> OracleThrows -> SecondException
+OracleThrows -> execute      -> FirstException
+OracleThrows -> execute      -> SecondException
+OracleContract -> run        -> FirstException
+OracleContract -> run        -> SecondException
+```
+
+Result:
+
+```text
+javac oracle relationships:       6
+OpenUnderstand relationships:     6
+Missing relationships:            0
+Unexpected relationships:         0
+Direct Throws comparison:         PASSED
+```
+
+The `javac` AST exposes direct declared-exception relationships. The inverse
+`ThrowsBy` relationships were validated separately through the semantic graph
+invariant test, which verifies that every `Throws` edge has exactly one
+reversed `ThrowsBy` edge with consistent source metadata.
+
+```text
+Fallback oracle status: PASSED
+SciTools validation:    PENDING LICENSE
+```
 
 
 Reproduction commands
