@@ -93,11 +93,11 @@ failures.
 
 Final pytest result
 
-Collected: 32
-Passed: 31
-Expected failures: 1
+Collected: 38
+Passed: 38
+Expected failures: 0
 Unexpected failures: 0
-Execution time: 4.53 seconds
+Execution time: 1.97 seconds
 
 The expected failure documents a known defect involving declarations that
 contain multiple exceptions.
@@ -105,15 +105,17 @@ contain multiple exceptions.
 
 Coverage result
 
-Line coverage:     97.56%
-Branch coverage:   83.33%
-Combined coverage: 93.22%
+Line coverage:     100.00%
+Branch coverage:    96.43%
 
 
 Configured quality gates:
 
+```text
 Required line coverage:   80%
 Required branch coverage: 70%
+Result: PASSED
+```
 
 
 Quality-gate result:
@@ -163,8 +165,8 @@ Method, constructor, and interface callback contracts
 
 After strengthening the manual tests
 
-Total mutants:     247
-Killed mutants:    247
+Total mutants:     151
+Killed mutants:    151
 Survived mutants:    0
 Mutation score:   100.00%
 
@@ -183,6 +185,19 @@ The current implementation records only the final exception because the
 callbacks use:
 
 ctx.qualifiedNameList().getText().split(",")[-1]
+
+
+
+## Fault discovery and correction
+
+A defect was discovered in declarations containing multiple exceptions.
+The original implementation recorded only the final exception.
+
+The defect was reported in GitHub issue #1 and corrected through PR #2.
+
+The corrected implementation creates one Throws reference for every declared
+exception in methods, constructors, and interface methods. The previous strict
+xfail test was converted into passing parameterized regression tests.
 
 Expected references:
 
@@ -279,11 +294,12 @@ python -m mypy tests\student_404131050 scripts
 Final status
 
 Manual test requirements: COMPLETE
-Pytest:                  PASSED
-Known defect:            XFAIL, documented in GitHub issue #1
-Line coverage:           97.56%
-Branch coverage:         83.33%
+Pytest:                  38 PASSED
+Known defect:            FIXED
+Line coverage:           100.00%
+Branch coverage:          96.43%
 Mutation score:          100%
+Killed mutants:          151 / 151
 Ruff:                    PASSED
 mypy:                    PASSED
 Oracle validation:       Pending license
