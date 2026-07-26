@@ -54,6 +54,10 @@ class _RootContext:
     parentCtx = None
 
 
+class _ContextWithoutParent:
+    """Context that does not expose a parentCtx attribute."""
+
+
 class _ChildContext:
     def __init__(self, parent: object) -> None:
         self.parentCtx = parent
@@ -985,3 +989,13 @@ def test_declaration_callbacks_preserve_context_and_reference_inputs(
     assert reference["potential_refent"] == "Container.SecondException"
     assert reference["line"] == "7"
     assert reference["col"] == "42"
+
+
+@pytest.mark.unit
+def test_findmethodreturntype_handles_context_without_parent_attribute() -> None:
+    listener = sut.Throws_TrowsBy()
+
+    return_type, content = listener.findmethodreturntype(_ContextWithoutParent())
+
+    assert return_type == ""
+    assert content == ""
