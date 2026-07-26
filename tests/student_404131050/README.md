@@ -272,6 +272,39 @@ Surviving-mutant reporting
 Mutation artifact upload
 
 
+## Dockerized reproducible environment
+
+A Docker-based test environment was added as an optional reproducibility
+enhancement.
+
+The Docker image uses Python 3.11.9 on Linux and performs:
+
+- Dependency installation from `requirements-dev.lock`
+- Ruff linting
+- mypy static analysis
+- Complete pytest execution
+- Line and branch coverage measurement
+- Coverage quality-gate enforcement
+
+The image is automatically built and executed by GitHub Actions because
+Docker was not installed in the local Windows environment.
+
+```text
+docker build -t openunderstand-testing-404131050 .
+docker run --rm openunderstand-testing-404131050
+
+Workflow:
+.github/workflows/docker.yml
+
+Result:
+Docker image build: PASSED
+Containerized tests: PASSED
+Pytest: 38 passed
+Line coverage: 100.00%
+Branch coverage: 96.43%
+Coverage quality gate: PASSED
+```
+
 
 Oracle validation
 
