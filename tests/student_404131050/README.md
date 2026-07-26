@@ -93,11 +93,14 @@ failures.
 
 Final pytest result
 
-Collected: 39
-Passed: 39
+```text
+Collected: 40
+Passed: 40
+Failed: 0
 Expected failures: 0
-Unexpected failures: 0
-Execution time: 2.21 seconds
+Warnings: 2
+Execution time: 3.82 seconds
+```
 
 The expected failure documents a known defect involving declarations that
 contain multiple exceptions.
@@ -310,10 +313,11 @@ Workflow:
 Result:
 Docker image build: PASSED
 Containerized tests: PASSED
-Pytest: 39 passed
+Pytest: 40 passed
 Line coverage: 100.00%
 Branch coverage: 96.43%
 Coverage quality gate: PASSED
+Oracle runtime:       OpenJDK 17
 ```
 
 ## Semantic reference graph validation
@@ -448,7 +452,7 @@ python -m mypy tests\student_404131050 scripts
 Final status
 
 Manual test requirements: COMPLETE
-Pytest:                  38 PASSED
+Pytest:                  40 PASSED
 Known defect:            FIXED
 Line coverage:           100.00%
 Branch coverage:          96.43%
