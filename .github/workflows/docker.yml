@@ -1,0 +1,57 @@
+name: Docker Reproducibility
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - feature/testing-404131050
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "requirements-dev.lock"
+      - "pyproject.toml"
+      - "openunderstand/analysis_passes/Throws_ThrowsBy.py"
+      - "tests/student_404131050/**"
+      - "scripts/**"
+      - ".github/workflows/docker.yml"
+
+  pull_request:
+    branches:
+      - feature/testing-404131050
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "requirements-dev.lock"
+      - "pyproject.toml"
+      - "openunderstand/analysis_passes/Throws_ThrowsBy.py"
+      - "tests/student_404131050/**"
+      - "scripts/**"
+      - ".github/workflows/docker.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  docker-test:
+    name: Build and test Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Verify Docker
+        run: docker version
+
+      - name: Build test image
+        run: |
+          docker build \
+            --tag openunderstand-testing-404131050 \
+            .
+
+      - name: Run containerized quality checks
+        run: |
+          docker run --rm \
+            openunderstand-testing-404131050

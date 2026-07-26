@@ -1,0 +1,13 @@
+.git
+.venv
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.hypothesis
+__pycache__
+*.pyc
+coverage-reports
+htmlcov
+mutants
+pynguin-report
+tests/student_404131050/generated/raw
