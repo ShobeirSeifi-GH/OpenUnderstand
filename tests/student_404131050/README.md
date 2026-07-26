@@ -322,6 +322,43 @@ This test validates graph-level invariants rather than only checking
 individual reference dictionaries.
 
 
+## Performance regression testing
+
+A dedicated performance benchmark was added for the `Throws/ThrowsBy`
+analysis pass.
+
+The benchmark processes synthetic method declarations containing three
+declared exceptions. It compares the median execution time of two input
+sizes over five repetitions.
+
+Final benchmark result:
+
+```text
+Small batch:              1,000 declarations
+Large batch:              2,000 declarations
+References in large batch: 6,000
+Repetitions:                   5
+
+Small batch median:       0.030672 seconds
+Large batch median:       0.077686 seconds
+Growth ratio:             2.533x
+References per second:    77,234.41
+```
+
+Performance gates:
+
+```text
+Maximum large-batch time: 3.0 seconds
+Maximum growth ratio:     3.0x
+Result:                    PASSED
+```
+
+The benchmark is executed independently from the normal pytest suite to
+avoid introducing timing-dependent and potentially flaky unit tests.
+
+The generated JSON report is uploaded by GitHub Actions as the
+`performance-report` artifact.
+
 Oracle validation
 
 Comparison with SciTools Understand is currently pending because Understand
